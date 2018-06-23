@@ -117,49 +117,33 @@ BOOL GameObject_IsHit(GameObject* obj1, GameObject* obj2)
 	else if (obj1->shape == SHAPE_OVAL && obj2->shape == SHAPE_OVAL)
 	{
 		// STEP1 : E2‚ð’PˆÊ‰~‚É‚·‚é•ÏŠ·‚ðE1‚ÉŽ{‚·
-		float DefAng = 0;
-		float Cos = cosf(DefAng);
-		float Sin = sinf(DefAng);
-		float nx = obj2->size.x * Cos;
-		float ny = -obj2->size.x * Sin;
-		float px = obj2->size.y * Sin;
-		float py = obj2->size.y * Cos;
-		float ox = cosf(0)*(obj2->pos.x - obj1->pos.x) + sinf(0)*(obj2->pos.y - obj1->pos.y);
-		float oy = -sinf(0)*(obj2->pos.x - obj1->pos.x) + cosf(0)*(obj2->pos.y - obj1->pos.y);
+		float nx = obj1->size.x;
+		float ny = obj1->size.y;
+		float px = obj2->size.x;
+		float py = obj2->size.y;
+		float ox = (obj2->pos.x - obj1->pos.x);
+		float oy = (obj2->pos.y - obj1->pos.y);
 
 		// STEP2 : ˆê”ÊŽ®A`G‚ÌŽZo
-		float rx_pow2 = 1 / (obj1->size.x*obj1->size.x);
-		float ry_pow2 = 1 / (obj1->size.y*obj1->size.y);
-		float A = rx_pow2 * nx*nx + ry_pow2 * ny*ny;
-		float B = rx_pow2 * px*px + ry_pow2 * py*py;
-		float D = 2 * rx_pow2*nx*px + 2 * ry_pow2*ny*py;
-		float E = 2 * rx_pow2*nx*ox + 2 * ry_pow2*ny*oy;
-		float F = 2 * rx_pow2*px*ox + 2 * ry_pow2*py*oy;
-		float G = (ox / obj1->size.x)*(ox / obj1->size.x) + (oy / obj1->size.y)*(oy / obj1->size.y) - 1;
+		float rx_pow2 = 1 / (nx*nx);
+		float ry_pow2 = 1 / (ny*ny);
+		float ax = rx_pow2 * px*px;
+		float ay = ry_pow2 * py*py;
+		float bx = 2 * rx_pow2*px*ox;
+		float by = 2 * ry_pow2*py*oy;
+		float g = ox*ox*rx_pow2 + oy*oy*ry_pow2 - 1;
 
-		// STEP3 : •½sˆÚ“®—Ê(h,k)‹y‚Ñ‰ñ“]Šp“xƒÆ‚ÌŽZo
-		float tmp1 = 1 / (D*D - 4 * A*B);
-		float h = (F*D - 2 * E*B)*tmp1;
-		float k = (E*D - 2 * A*F)*tmp1;
-		float Th = (B - A) == 0 ? 0 : atanf(D / (B - A)) * 0.5f;
+		// STEP3 : •½sˆÚ“®—Ê‚ÌŽZo
+		float tr_x = bx / (2 * ax);
+		float tr_y = by / (2 * ay);
 
 		// STEP4 : +1‘È‰~‚ðŒ³‚É–ß‚µ‚½Ž®‚Å“–‚½‚è”»’è
-		float CosTh = cosf(Th);
-		float SinTh = sinf(Th);
-		float A_tt = A * CosTh*CosTh + B * SinTh*SinTh - D * CosTh*SinTh;
-		float B_tt = A * SinTh*SinTh + B * CosTh*CosTh + D * CosTh*SinTh;
-		float KK = A * h*h + B * k*k + D * h*k - E * h - F * k + G;
-		if (KK>0) KK = 0;  // ”O‚Ì‚½‚ß
-		float Rx_tt = 1 + sqrtf(-KK / A_tt);
-		float Ry_tt = 1 + sqrtf(-KK / B_tt);
-		float x_tt = CosTh * h - SinTh * k;
-		float y_tt = SinTh * h + CosTh * k;
-		float JudgeValue = x_tt * x_tt / (Rx_tt*Rx_tt) + y_tt * y_tt / (Ry_tt*Ry_tt);
+		float kk = GetMinF(ax * tr_x*tr_x + ay * tr_y*tr_y - bx * tr_x - by * tr_y + g, 0);
+		float ex = 1 + sqrtf(-kk / ax);
+		float ey = 1 + sqrtf(-kk / ay);
+		float JudgeValue = tr_x * tr_x / (ex*ex) + tr_y * tr_y / (ey*ey);
 
-		if (JudgeValue <= 1)
-			return TRUE;    // Õ“Ë
-
-		return FALSE;
+		return (JudgeValue <= 1);
 	}
 	else
 	{
