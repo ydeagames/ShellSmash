@@ -26,5 +26,8 @@ float Vec2_Dot(Vec2* vec, Vec2* other);
 // <もう一方のベクトルとの距離>
 float Vec2_DistanceFrom(Vec2* vec, Vec2* other);
 
+// <もう一方のベクトルとの距離の二乗>
+float Vec2_DistanceSquareFrom(Vec2* vec, Vec2* other);
+
 // <正規化（長さを1にした）ベクトル>
 Vec2 Vec2_Normalized(Vec2* vec);

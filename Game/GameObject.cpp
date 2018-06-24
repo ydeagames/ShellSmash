@@ -1,6 +1,7 @@
 #include "GameObject.h"
 #include "GameMain.h"
 #include "GameUtils.h"
+#include <math.h>
 
 // 定数の定義 ==============================================================
 
@@ -14,6 +15,12 @@
 // <パドル>
 #define PADDLE_WIDTH  64
 #define PADDLE_HEIGHT 8
+
+// 関数の宣言 ==============================================================
+
+static BOOL GameObject_IsHitOvalPoint(GameObject* oval, float px, float py);
+static BOOL GameObject_IsHitOval(GameObject* obj1, GameObject* obj2);
+static BOOL GameObject_IsHitBox(GameObject* obj1, GameObject* obj2);
 
 // 関数の定義 ==============================================================
 
@@ -103,56 +110,97 @@ float GameObject_GetY(GameObject* obj, ObjectSide side, float padding)
 {
 	return GameObject_OffsetY(obj, side, obj->pos.y, padding);
 }
-#include <math.h>
+
+// <矩形オブジェクト×矩形オブジェクト当たり判定>
+static BOOL GameObject_IsHitBox(GameObject* obj1, GameObject* obj2)
+{
+	return (
+		GameObject_GetX(obj2, LEFT) < GameObject_GetX(obj1, RIGHT) &&
+		GameObject_GetX(obj1, LEFT) < GameObject_GetX(obj2, RIGHT) &&
+		GameObject_GetY(obj2, TOP) < GameObject_GetY(obj1, BOTTOM) &&
+		GameObject_GetY(obj1, TOP) < GameObject_GetY(obj2, BOTTOM)
+		);
+}
+
+// <楕円オブジェクト×楕円オブジェクト当たり判定>
+static BOOL GameObject_IsHitOval(GameObject* obj1, GameObject* obj2)
+{
+	// STEP1 : obj2を単位円にする変換をobj1に施す
+	float nx = obj1->size.x / 2;
+	float ny = obj1->size.y / 2;
+	float px = obj2->size.x / 2;
+	float py = obj2->size.y / 2;
+	float ox = (obj2->pos.x - obj1->pos.x);
+	float oy = (obj2->pos.y - obj1->pos.y);
+
+	// STEP2 : 一般式の算出
+	float rx_pow2 = 1 / (nx*nx);
+	float ry_pow2 = 1 / (ny*ny);
+	float ax = rx_pow2 * px*px;
+	float ay = ry_pow2 * py*py;
+	float bx = 2 * rx_pow2*px*ox;
+	float by = 2 * ry_pow2*py*oy;
+	float g = ox * ox*rx_pow2 + oy * oy*ry_pow2 - 1;
+
+	// STEP3 : 平行移動量の算出
+	float tr_x = bx / (2 * ax);
+	float tr_y = by / (2 * ay);
+
+	// STEP4 : +1楕円を元に戻した式で当たり判定
+	float kk = GetMinF(ax * tr_x*tr_x + ay * tr_y*tr_y - bx * tr_x - by * tr_y + g, 0);
+	float ex = 1 + sqrtf(-kk / ax);
+	float ey = 1 + sqrtf(-kk / ay);
+	float JudgeValue = tr_x * tr_x / (ex*ex) + tr_y * tr_y / (ey*ey);
+
+	return (JudgeValue <= 1);
+}
+
+// <楕円オブジェクト×点当たり判定>
+static BOOL GameObject_IsHitOvalPoint(GameObject* oval, float px, float py)
+{
+	// 点に楕円→真円変換行列を適用
+	float tx = px - oval->pos.x;
+	float ty = py - oval->pos.y;
+	float rx = oval->size.x / 2;
+	float ry = oval->size.y / 2;
+
+	// 原点から移動後点までの距離を算出
+	return  (tx * tx + ty * ty * (rx / ry) * (rx / ry) <= rx * rx);
+}
+
 // <オブジェクト当たり判定>
 BOOL GameObject_IsHit(GameObject* obj1, GameObject* obj2)
 {
 	if (obj1->shape == SHAPE_BOX && obj2->shape == SHAPE_BOX)
-		return (
-			GameObject_GetX(obj2, LEFT) < GameObject_GetX(obj1, RIGHT) &&
-			GameObject_GetX(obj1, LEFT) < GameObject_GetX(obj2, RIGHT) &&
-			GameObject_GetY(obj2, TOP) < GameObject_GetY(obj1, BOTTOM) &&
-			GameObject_GetY(obj1, TOP) < GameObject_GetY(obj2, BOTTOM)
-			);
+		return GameObject_IsHitBox(obj1, obj2);
 	else if (obj1->shape == SHAPE_OVAL && obj2->shape == SHAPE_OVAL)
-	{
-		// STEP1 : E2を単位円にする変換をE1に施す
-		float nx = obj1->size.x;
-		float ny = obj1->size.y;
-		float px = obj2->size.x;
-		float py = obj2->size.y;
-		float ox = (obj2->pos.x - obj1->pos.x);
-		float oy = (obj2->pos.y - obj1->pos.y);
-
-		// STEP2 : 一般式A～Gの算出
-		float rx_pow2 = 1 / (nx*nx);
-		float ry_pow2 = 1 / (ny*ny);
-		float ax = rx_pow2 * px*px;
-		float ay = ry_pow2 * py*py;
-		float bx = 2 * rx_pow2*px*ox;
-		float by = 2 * ry_pow2*py*oy;
-		float g = ox*ox*rx_pow2 + oy*oy*ry_pow2 - 1;
-
-		// STEP3 : 平行移動量の算出
-		float tr_x = bx / (2 * ax);
-		float tr_y = by / (2 * ay);
-
-		// STEP4 : +1楕円を元に戻した式で当たり判定
-		float kk = GetMinF(ax * tr_x*tr_x + ay * tr_y*tr_y - bx * tr_x - by * tr_y + g, 0);
-		float ex = 1 + sqrtf(-kk / ax);
-		float ey = 1 + sqrtf(-kk / ay);
-		float JudgeValue = tr_x * tr_x / (ex*ex) + tr_y * tr_y / (ey*ey);
-
-		return (JudgeValue <= 1);
-	}
+		return GameObject_IsHitBox(obj1, obj2) && GameObject_IsHitOval(obj1, obj2);
 	else
 	{
-		return (
-			GameObject_GetX(obj2, LEFT) < GameObject_GetX(obj1, RIGHT) &&
-			GameObject_GetX(obj1, LEFT) < GameObject_GetX(obj2, RIGHT) &&
-			GameObject_GetY(obj2, TOP) < GameObject_GetY(obj1, BOTTOM) &&
-			GameObject_GetY(obj1, TOP) < GameObject_GetY(obj2, BOTTOM)
-			);
+		if (GameObject_IsHitBox(obj1, obj2))
+		{
+			if (obj1->shape == SHAPE_OVAL)
+			{
+				GameObject* tmp = obj1;
+				obj1 = obj2;
+				obj2 = tmp;
+			}
+			if (GameObject_GetX(obj1, LEFT) <= obj2->pos.x && obj2->pos.x <= GameObject_GetX(obj1, RIGHT))
+				return obj1->size.y / 2 + obj2->size.y / 2 > GetAbsF(obj2->pos.y - obj1->pos.y);
+			else if (GameObject_GetY(obj1, TOP) <= obj2->pos.y && obj2->pos.y <= GameObject_GetY(obj1, BOTTOM))
+				return obj1->size.x / 2 + obj2->size.x / 2 > GetAbsF(obj2->pos.x - obj1->pos.x);
+			else
+			{
+				return (
+					GameObject_IsHitOvalPoint(obj2, GameObject_GetX(obj1, LEFT), GameObject_GetY(obj1, TOP)) ||
+					GameObject_IsHitOvalPoint(obj2, GameObject_GetX(obj1, RIGHT), GameObject_GetY(obj1, TOP)) ||
+					GameObject_IsHitOvalPoint(obj2, GameObject_GetX(obj1, LEFT), GameObject_GetY(obj1, BOTTOM)) ||
+					GameObject_IsHitOvalPoint(obj2, GameObject_GetX(obj1, RIGHT), GameObject_GetY(obj1, BOTTOM))
+					);
+			}
+		}
+
+		return FALSE;
 	}
 }
 
@@ -171,7 +219,8 @@ void GameObject_Render(GameObject* obj)
 			break;
 		case SHAPE_OVAL:
 			// 楕円
-			DrawOvalAA(GameObject_GetX(obj, CENTER_X), GameObject_GetY(obj, CENTER_Y), obj->size.x, obj->size.y, 120, obj->sprite.color, TRUE);
+			DrawOvalAA(GameObject_GetX(obj, CENTER_X), GameObject_GetY(obj, CENTER_Y), obj->size.x / 2, obj->size.y / 2, 120, obj->sprite.color, TRUE);
+			DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), COLOR_WHITE, FALSE, .5f);
 			break;
 		}
 	}

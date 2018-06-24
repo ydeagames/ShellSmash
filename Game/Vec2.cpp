@@ -30,7 +30,13 @@ float Vec2_Dot(Vec2* vec, Vec2* other)
 // <もう一方のベクトルとの距離>
 float Vec2_DistanceFrom(Vec2* vec, Vec2* other)
 {
-	return sqrtf((other->x - vec->x) * (other->x - vec->x) + (other->y - vec->y) * (other->y - vec->y));
+	return sqrtf(Vec2_DistanceSquareFrom(vec, other));
+}
+
+// <もう一方のベクトルとの距離の二乗>
+float Vec2_DistanceSquareFrom(Vec2* vec, Vec2* other)
+{
+	return (other->x - vec->x) * (other->x - vec->x) + (other->y - vec->y) * (other->y - vec->y);
 }
 
 // <正規化（長さを1にした）ベクトル>

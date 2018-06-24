@@ -22,7 +22,7 @@ void InitializePlay(void)
 	g_shell.pos = g_field.pos;
 	g_shell.size.y = 64;
 	g_paddle = GameObject_Paddle_Create();
-	g_paddle.shape = SHAPE_OVAL;
+	//g_paddle.shape = SHAPE_OVAL;
 	g_paddle.size.x = 64;
 	g_paddle.size.y = 64;
 	g_paddle.sprite.color = COLOR_GREEN;
