@@ -220,7 +220,8 @@ void GameObject_Render(GameObject* obj)
 		case SHAPE_OVAL:
 			// ‘È‰~
 			DrawOvalAA(GameObject_GetX(obj, CENTER_X), GameObject_GetY(obj, CENTER_Y), obj->size.x / 2, obj->size.y / 2, 120, obj->sprite.color, TRUE);
-			DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), COLOR_WHITE, FALSE, .5f);
+			if (DEBUG_HITBOX)
+				DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), COLOR_WHITE, FALSE, .5f);
 			break;
 		}
 	}
