@@ -160,6 +160,23 @@ void RenderPlay(void)
 	}
 
 	GameObject_Render(&g_paddle);
+
+	/*
+	{
+		Vec2 base = Vec2_Create(320, 240);
+		Vec2 vec = Vec2_Create(100, 100);
+		Vec2 angle = Vec2_Create(120, -80);
+		Vec2 vec_a;
+		Vec2 vec_b;
+
+		Vec2_Decompose(&vec, &angle, &vec_a, &vec_b);
+
+		Vec2_Render(&vec, &base, COLOR_WHITE);
+		Vec2_Render(&angle, &base, COLOR_GRAY);
+		Vec2_Render(&vec_a, &base, COLOR_RED);
+		Vec2_Render(&vec_b, &base, COLOR_BLUE);
+	}
+	/**/
 }
 
 // プレイシーンの終了処理

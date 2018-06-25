@@ -51,21 +51,26 @@ void RenderTitle(void)
 		int duration = 90;
 		int idle = 30;
 
-		SetDrawBlendMode(DX_BLENDMODE_ALPHA,
-			(int)GetEasingValue(ESG_INQUART, GetPercentageRange((float)g_title_count, 60 * 0, 60 * 0.5f), 255)
-		);
-		DrawRotaGraph(SCREEN_CENTER_X, SCREEN_CENTER_Y + 96, 1, 0, g_texture_text, TRUE);
-		SetDrawBlendMode(DX_BLENDMODE_ALPHA,
-			(int)GetMinF(
-				GetEasingValue(ESG_INQUART, GetPercentageRange((float)g_title_count, 60 * 0, 60 * 0.5f), 255),		// フェードイン
-				GetEasingValueRange(ESG_INCIRC, GetPercentageRange((float)(g_title_count % (duration + idle)), 0, (float)duration), 255, 32)
-			)
-		);
-		DrawRotaGraph(SCREEN_CENTER_X, SCREEN_CENTER_Y + 96,
-			GetEasingValueRange(ESG_LINEAR, GetPercentageRange((float)(g_title_count % (duration + idle)), 0, (float)duration), 1.1f, 1.f),
-			0, g_texture_text, TRUE
-		);
-		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+		{
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA,
+				(int)GetEasingValue(ESG_INQUART, GetPercentageRange((float)g_title_count, 60 * 0, 60 * 0.5f), 255)
+			);
+			DrawRotaGraph(SCREEN_CENTER_X, SCREEN_CENTER_Y + 96, 1, 0, g_texture_text, TRUE);
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+		}
+		{
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA,
+				(int)GetMinF(
+					GetEasingValue(ESG_INQUART, GetPercentageRange((float)g_title_count, 60 * 0, 60 * 0.5f), 255),		// フェードイン
+					GetEasingValueRange(ESG_INCIRC, GetPercentageRange((float)(g_title_count % (duration + idle)), 0, (float)duration), 255, 32)
+				)
+			);
+			DrawRotaGraph(SCREEN_CENTER_X, SCREEN_CENTER_Y + 96,
+				GetEasingValueRange(ESG_LINEAR, GetPercentageRange((float)(g_title_count % (duration + idle)), 0, (float)duration), 1.1f, 1.f),
+				0, g_texture_text, TRUE
+			);
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+		}
 	}
 
 	//DrawFormatString(10, 10, COLOR_WHITE, "タイトルシーン");
