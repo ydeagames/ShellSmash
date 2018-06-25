@@ -92,6 +92,13 @@ void Vec2_Decompose(Vec2* vec, Vec2* angle, Vec2* vec_a, Vec2* vec_b)
 	*vec_b = Vec2_Create(vec_b_length * cosf(vec_b_rota), vec_b_length * sinf(vec_b_rota));
 }
 
+// <ベクトルを合成>
+void Vec2_Add(Vec2* vec, Vec2* vec_a, Vec2* vec_b)
+{
+	vec->x += vec_a->x + vec_b->x;
+	vec->y += vec_a->y + vec_b->y;
+}
+
 // <ベクトルを描画>
 void Vec2_Render(Vec2* vec, Vec2* base, unsigned int color, float Thickness)
 {

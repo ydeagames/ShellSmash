@@ -94,42 +94,21 @@ void UpdatePlay(void)
 				Vec2 vel_before_a = shell_a->vel;
 				// 衝突前のオブジェクトBの速度ベクトル
 				Vec2 vel_before_b = shell_b->vel;
-				// 衝突前のオブジェクトAの速さ
-				float vel_before_a_length = Vec2_Length(&vel_before_a);
-				// 衝突前のオブジェクトBの速さ
-				float vel_before_b_length = Vec2_Length(&vel_before_b);
-				
-				float vel_percent_a = vel_before_a_length / (vel_before_a_length + vel_before_b_length);
-				float vel_percent_b = vel_before_b_length / (vel_before_a_length + vel_before_b_length);
 
 				// 進むべき方向ベクトル
 				Vec2 forward = Vec2_Create(shell_b->pos.x - shell_a->pos.x, shell_b->pos.y - shell_a->pos.y);
-				// 現在の速度方向ベクトル
-				Vec2 current = Vec2_Create(shell_a->vel.x - shell_b->vel.x, shell_a->vel.y - shell_b->vel.y);
-				// 進むべき方向の角度
-				float forward_rota = atan2f(forward.y, forward.x);
-				// 現在の速度方向の角度
-				float current_rota = atan2f(current.y, current.x);
-				// 現在の速さ
-				float current_length = Vec2_Length(&current);
-				// 方向の差
-				float diff_rota = forward_rota - current_rota;
-				// 衝突後のオブジェクトAの速さ
-				float vel_after_a_length = sinf(diff_rota) * current_length;
-				// 衝突後のオブジェクトBの速さ
-				float vel_after_b_length = cosf(diff_rota) * current_length;
-				// 衝突後のオブジェクトAの角度
-				float vel_after_a_rota = forward_rota + (float)((sinf(diff_rota)<0) ? -M_PI_2 : M_PI_2);
-				// 衝突後のオブジェクトBの角度
-				float vel_after_b_rota = forward_rota;
-				// 衝突後のオブジェクトAの速度ベクトル
-				Vec2 vel_after_a = Vec2_Create(cosf(vel_after_a_rota)*vel_after_a_length, sinf(vel_after_a_rota)*vel_after_a_length);
-				// 衝突後のオブジェクトBの速度ベクトル
-				Vec2 vel_after_b = Vec2_Create(cosf(vel_after_b_rota)*vel_after_b_length, sinf(vel_after_b_rota)*vel_after_b_length);
+
+				Vec2 vel_vertical_a;
+				Vec2 vel_horizontal_a;
+				Vec2_Decompose(&vel_before_a, &forward, &vel_vertical_a, &vel_horizontal_a);
+				Vec2 vel_vertical_b;
+				Vec2 vel_horizontal_b;
+				Vec2_Decompose(&vel_before_b, &forward, &vel_vertical_b, &vel_horizontal_b);
+
 				// 衝突後のオブジェクトAのベクトル合成
-				shell_a->vel = Vec2_Create(vel_after_a.x * vel_percent_b - vel_after_b.x * vel_percent_a, vel_after_a.y * vel_percent_b - vel_after_b.y * vel_percent_a);
+				Vec2_Add(&shell_a->vel, &vel_vertical_b, &vel_horizontal_a);
 				// 衝突後のオブジェクトBのベクトル合成
-				shell_b->vel = Vec2_Create(vel_after_b.x * vel_percent_b - vel_after_a.x * vel_percent_a, vel_after_b.y * vel_percent_b - vel_after_a.y * vel_percent_a);
+				Vec2_Add(&shell_b->vel, &vel_vertical_a, &vel_horizontal_b);
 			}
 		}
 	}

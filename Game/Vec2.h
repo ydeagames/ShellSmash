@@ -48,5 +48,8 @@ float Vec2_Angle(Vec2* vec);
 // <ベクトルを分解>
 void Vec2_Decompose(Vec2* vec, Vec2* angle, Vec2* vec_a, Vec2* vec_b);
 
+// <ベクトルを合成>
+void Vec2_Add(Vec2* vec, Vec2* vec_a, Vec2* vec_b);
+
 // <ベクトルを描画>
 void Vec2_Render(Vec2* vec, Vec2* base, unsigned int color, float Thickness = 1.f);
