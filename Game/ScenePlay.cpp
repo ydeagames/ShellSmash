@@ -40,18 +40,32 @@ void InitializePlay(void)
 // プレイシーンの更新処理
 void UpdatePlay(void)
 {
+	GameObject inner_field = g_field;
+	inner_field.size.x -= 2 * 45;
+	inner_field.size.y -= 2 * 45;
+
 	//if (g_play_count++ >= 180)
 	if (IsKeyPressed(PAD_INPUT_2))
 		RequestScene(SCENE_RESULT);
 
+	// 操作
 	{
 		int mouse_x, mouse_y;
 		GetMousePoint(&mouse_x, &mouse_y);
 
-		g_paddle.vel.x = mouse_x - g_paddle.pos.x;
-		g_paddle.vel.y = mouse_y - g_paddle.pos.y;
+		{
+			GameObject mouse = g_paddle;
+			mouse.pos = Vec2_Create((float)mouse_x, (float)mouse_y);
+
+			GameObject_Field_CollisionHorizontal(&inner_field, &mouse, CONNECTION_BARRIER, EDGESIDE_INNER);
+			GameObject_Field_CollisionVertical(&inner_field, &mouse, CONNECTION_BARRIER, EDGESIDE_INNER);
+
+			g_paddle.vel.x = mouse.pos.x - g_paddle.pos.x;
+			g_paddle.vel.y = mouse.pos.y - g_paddle.pos.y;
+		}
 	}
 
+	// オブジェクト移動
 	{
 		g_paddle.pos.x += g_paddle.vel.x;
 		g_paddle.pos.y += g_paddle.vel.y;
@@ -65,8 +79,31 @@ void UpdatePlay(void)
 		}
 	}
 
+	// 壁
+	{
+		// 壁とコウラ
+		for (int i = 0; i < NUM_SHELLS; i++)
+		{
+			if (GameObject_Field_CollisionHorizontal(&g_field, &g_shells[i], CONNECTION_BARRIER, EDGESIDE_INNER))
+			{
+				g_shells[i].vel.x *= -.98f;
+			}
+			if (GameObject_Field_CollisionVertical(&g_field, &g_shells[i], CONNECTION_BARRIER, EDGESIDE_INNER))
+			{
+				g_shells[i].vel.y *= -.98f;
+			}
+		}
+
+		// 壁とパドル
+		{
+			GameObject_Field_CollisionHorizontal(&inner_field, &g_paddle, CONNECTION_BARRIER, EDGESIDE_INNER);
+			GameObject_Field_CollisionVertical(&inner_field, &g_paddle, CONNECTION_BARRIER, EDGESIDE_INNER);
+		}
+	}
+
 	for (int i = 0; i < NUM_SHELLS; i++)
 	{
+		// パドルとコウラ
 		if (GameObject_IsHit(&g_paddle, &g_shells[i]))
 		{
 			Vec2 last_vel = g_shells[i].vel;
@@ -88,6 +125,8 @@ void UpdatePlay(void)
 		{
 			GameObject* shell_a = &g_shells[ix];
 			GameObject* shell_b = &g_shells[iy];
+
+			// コウラ同士
 			if (GameObject_IsHit(shell_a, shell_b))
 			{
 				// めり込み防止
@@ -123,18 +162,6 @@ void UpdatePlay(void)
 					Vec2_Add(&shell_b->vel, &vel_parallel_a, &vel_perpendicular_b);
 				}
 			}
-		}
-	}
-
-	for (int i = 0; i < NUM_SHELLS; i++)
-	{
-		if (GameObject_Field_CollisionHorizontal(&g_field, &g_shells[i], CONNECTION_BARRIER, EDGESIDE_INNER))
-		{
-			g_shells[i].vel.x *= -.98f;
-		}
-		if (GameObject_Field_CollisionVertical(&g_field, &g_shells[i], CONNECTION_BARRIER, EDGESIDE_INNER))
-		{
-			g_shells[i].vel.y *= -.98f;
 		}
 	}
 }
