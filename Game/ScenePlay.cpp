@@ -90,6 +90,14 @@ void UpdatePlay(void)
 			GameObject* shell_b = &g_shells[iy];
 			if (GameObject_IsHit(shell_a, shell_b))
 			{
+				// めり込み防止
+				{
+					float r1 = GetMinF(shell_a->size.x, shell_a->size.y) / 2;
+					float r2 = GetMinF(shell_b->size.x, shell_b->size.y) / 2;
+					float angle = Vec2_Angle(&Vec2_Create(shell_a->pos.x - shell_b->pos.x, shell_a->pos.y - shell_b->pos.y));
+					shell_a->pos = Vec2_Create((r1+r2)*cosf(angle) + shell_b->pos.x, (r1+r2)*sinf(angle) + shell_b->pos.y);
+				}
+
 				// 衝突前のオブジェクトAの速度ベクトル
 				Vec2 vel_before_a = shell_a->vel;
 				// 衝突前のオブジェクトBの速度ベクトル
@@ -97,25 +105,23 @@ void UpdatePlay(void)
 
 				// 進むべき方向ベクトル
 				Vec2 forward = Vec2_Create(shell_b->pos.x - shell_a->pos.x, shell_b->pos.y - shell_a->pos.y);
-				Vec2_Render(&forward, &shell_b->pos, COLOR_YELLOW);
 
-				Vec2 vel_vertical_a;
-				Vec2 vel_horizontal_a;
-				Vec2_Decompose(&vel_before_a, &forward, &vel_vertical_a, &vel_horizontal_a);
-				Vec2_Render(&vel_vertical_a, &shell_a->pos, COLOR_GREEN);
-				Vec2_Render(&vel_horizontal_a, &shell_a->pos, COLOR_LIME);
-				Vec2 vel_vertical_b;
-				Vec2 vel_horizontal_b;
-				Vec2_Decompose(&vel_before_b, &forward, &vel_vertical_b, &vel_horizontal_b);
-				Vec2_Render(&vel_vertical_b, &shell_b->pos, COLOR_GREEN);
-				Vec2_Render(&vel_horizontal_b, &shell_b->pos, COLOR_LIME);
+				{
+					// 進むべき方向ベクトルと平行
+					Vec2 vel_parallel_a, vel_parallel_b;
+					// 進むべき方向ベクトルと鉛直
+					Vec2 vel_perpendicular_a, vel_perpendicular_b;
 
-				// 衝突後のオブジェクトAのベクトル合成
-				Vec2_Add(&shell_a->vel, &vel_vertical_b, &vel_horizontal_a);
-				Vec2_Render(&shell_a->vel, &shell_a->pos, COLOR_BLUE);
-				// 衝突後のオブジェクトBのベクトル合成
-				Vec2_Add(&shell_b->vel, &vel_vertical_a, &vel_horizontal_b);
-				Vec2_Render(&shell_b->vel, &shell_b->pos, COLOR_FUCHSIA);
+					// 衝突前のオブジェクトAのベクトル分解
+					Vec2_Decompose(&vel_before_a, &forward, &vel_parallel_a, &vel_perpendicular_a);
+					// 衝突前のオブジェクトBのベクトル分解
+					Vec2_Decompose(&vel_before_b, &forward, &vel_parallel_b, &vel_perpendicular_b);
+
+					// 衝突後のオブジェクトAのベクトル合成
+					Vec2_Add(&shell_a->vel, &vel_parallel_b, &vel_perpendicular_a);
+					// 衝突後のオブジェクトBのベクトル合成
+					Vec2_Add(&shell_b->vel, &vel_parallel_a, &vel_perpendicular_b);
+				}
 			}
 		}
 	}
