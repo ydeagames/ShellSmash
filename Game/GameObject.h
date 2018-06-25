@@ -35,7 +35,7 @@ typedef enum
 typedef enum
 {
 	SHAPE_BOX,					// ’·•ûŒ`
-	SHAPE_OVAL,					// ‘È‰~
+	SHAPE_CIRCLE,				// ‰~
 } ObjectShape;
 
 // \‘¢‘Ì‚ÌéŒ¾ ============================================================

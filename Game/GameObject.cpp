@@ -6,7 +6,7 @@
 // 定数の定義 ==============================================================
 
 // <デバッグ用当たり判定表示>
-#define DEBUG_HITBOX FALSE
+#define DEBUG_HITBOX TRUE
 
 // <コウラ>
 #define SHELL_WIDTH 32
@@ -18,8 +18,10 @@
 
 // 関数の宣言 ==============================================================
 
-static BOOL GameObject_IsHitOvalPoint(GameObject* oval, float px, float py);
+static BOOL GameObject_IsHitOvalPoint(GameObject* oval, Vec2* p);
 static BOOL GameObject_IsHitOval(GameObject* obj1, GameObject* obj2);
+static BOOL GameObject_IsHitCirclePoint(GameObject* oval, Vec2* p);
+static BOOL GameObject_IsHitCircle(GameObject* obj1, GameObject* obj2);
 static BOOL GameObject_IsHitBox(GameObject* obj1, GameObject* obj2);
 
 // 関数の定義 ==============================================================
@@ -156,11 +158,11 @@ static BOOL GameObject_IsHitOval(GameObject* obj1, GameObject* obj2)
 }
 
 // <楕円オブジェクト×点当たり判定>
-static BOOL GameObject_IsHitOvalPoint(GameObject* oval, float px, float py)
+static BOOL GameObject_IsHitOvalPoint(GameObject* oval, Vec2* p)
 {
 	// 点に楕円→真円変換行列を適用
-	float tx = px - oval->pos.x;
-	float ty = py - oval->pos.y;
+	float tx = p->x - oval->pos.x;
+	float ty = p->y - oval->pos.y;
 	float rx = oval->size.x / 2;
 	float ry = oval->size.y / 2;
 
@@ -168,18 +170,35 @@ static BOOL GameObject_IsHitOvalPoint(GameObject* oval, float px, float py)
 	return  (tx * tx + ty * ty * (rx / ry) * (rx / ry) <= rx * rx);
 }
 
+// <円オブジェクト×円オブジェクト当たり判定>
+static BOOL GameObject_IsHitCircle(GameObject* obj1, GameObject* obj2)
+{
+	float r1 = GetMinF(obj1->size.x, obj1->size.y) / 2;
+	float r2 = GetMinF(obj2->size.x, obj2->size.y) / 2;
+
+	return Vec2_LengthSquaredTo(&obj1->pos, &obj2->pos) < (r1 + r2)*(r1 + r2);
+}
+
+// <楕円オブジェクト×点当たり判定>
+static BOOL GameObject_IsHitCirclePoint(GameObject* circle, Vec2* p)
+{
+	float r1 = GetMinF(circle->size.x, circle->size.y) / 2;
+
+	return Vec2_LengthSquaredTo(&circle->pos, p) < r1*r1;
+}
+
 // <オブジェクト当たり判定>
 BOOL GameObject_IsHit(GameObject* obj1, GameObject* obj2)
 {
 	if (obj1->shape == SHAPE_BOX && obj2->shape == SHAPE_BOX)
 		return GameObject_IsHitBox(obj1, obj2);
-	else if (obj1->shape == SHAPE_OVAL && obj2->shape == SHAPE_OVAL)
-		return GameObject_IsHitBox(obj1, obj2) && GameObject_IsHitOval(obj1, obj2);
+	else if (obj1->shape == SHAPE_CIRCLE && obj2->shape == SHAPE_CIRCLE)
+		return GameObject_IsHitBox(obj1, obj2) && GameObject_IsHitCircle(obj1, obj2);
 	else
 	{
 		if (GameObject_IsHitBox(obj1, obj2))
 		{
-			if (obj1->shape == SHAPE_OVAL)
+			if (obj1->shape == SHAPE_CIRCLE)
 			{
 				GameObject* tmp = obj1;
 				obj1 = obj2;
@@ -192,10 +211,10 @@ BOOL GameObject_IsHit(GameObject* obj1, GameObject* obj2)
 			else
 			{
 				return (
-					GameObject_IsHitOvalPoint(obj2, GameObject_GetX(obj1, LEFT), GameObject_GetY(obj1, TOP)) ||
-					GameObject_IsHitOvalPoint(obj2, GameObject_GetX(obj1, RIGHT), GameObject_GetY(obj1, TOP)) ||
-					GameObject_IsHitOvalPoint(obj2, GameObject_GetX(obj1, LEFT), GameObject_GetY(obj1, BOTTOM)) ||
-					GameObject_IsHitOvalPoint(obj2, GameObject_GetX(obj1, RIGHT), GameObject_GetY(obj1, BOTTOM))
+					GameObject_IsHitCirclePoint(obj2, &Vec2_Create(GameObject_GetX(obj1, LEFT), GameObject_GetY(obj1, TOP))) ||
+					GameObject_IsHitCirclePoint(obj2, &Vec2_Create(GameObject_GetX(obj1, RIGHT), GameObject_GetY(obj1, TOP))) ||
+					GameObject_IsHitCirclePoint(obj2, &Vec2_Create(GameObject_GetX(obj1, LEFT), GameObject_GetY(obj1, BOTTOM))) ||
+					GameObject_IsHitCirclePoint(obj2, &Vec2_Create(GameObject_GetX(obj1, RIGHT), GameObject_GetY(obj1, BOTTOM)))
 					);
 			}
 		}
@@ -215,14 +234,24 @@ void GameObject_Render(GameObject* obj)
 		default:
 		case SHAPE_BOX:
 			// 矩形描画
-			DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), obj->sprite.color, TRUE);
-			break;
-		case SHAPE_OVAL:
-			// 楕円
-			DrawOvalAA(GameObject_GetX(obj, CENTER_X), GameObject_GetY(obj, CENTER_Y), obj->size.x / 2, obj->size.y / 2, 120, obj->sprite.color, TRUE);
 			if (DEBUG_HITBOX)
-				DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), COLOR_WHITE, FALSE, .5f);
+				DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), obj->sprite.color, FALSE, .5f);
+			else
+				DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), obj->sprite.color, TRUE);
 			break;
+		case SHAPE_CIRCLE:
+		{
+			float r1 = GetMinF(obj->size.x, obj->size.y) / 2;
+			// 円
+			if (DEBUG_HITBOX)
+			{
+				DrawCircleAA(GameObject_GetX(obj, CENTER_X), GameObject_GetY(obj, CENTER_Y), r1, 120, obj->sprite.color, FALSE, .5f);
+				DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), obj->sprite.color, FALSE, .5f);
+			}
+			else
+				DrawCircleAA(GameObject_GetX(obj, CENTER_X), GameObject_GetY(obj, CENTER_Y), r1, 120, obj->sprite.color, TRUE);
+			break;
+		}
 		}
 	}
 	else
@@ -231,7 +260,18 @@ void GameObject_Render(GameObject* obj)
 		{
 			// デバッグ当たり判定枠を表示
 			if (DEBUG_HITBOX)
-				DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), obj->sprite.color, FALSE, .5f);
+				switch (obj->shape)
+				{
+				default:
+				case SHAPE_BOX:
+					DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), obj->sprite.color, FALSE, .5f);
+				case SHAPE_CIRCLE:
+				{
+					float r1 = GetMinF(obj->size.x, obj->size.y) / 2;
+					DrawCircleAA(GameObject_GetX(obj, CENTER_X), GameObject_GetY(obj, CENTER_Y), r1, 120, obj->sprite.color, FALSE, .5f);
+					DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), obj->sprite.color, FALSE, .5f);
+				}
+				}
 			// スプライト描画
 			DrawRectRotaGraph2F(
 				GameObject_GetX(obj, CENTER_X) + obj->sprite.offset.x, GameObject_GetY(obj, CENTER_Y) + obj->sprite.offset.y,
@@ -261,7 +301,7 @@ void GameObject_Render(GameObject* obj)
 GameObject GameObject_Shell_Create(void)
 {
 	GameObject obj = GameObject_Create(Vec2_Create(), Vec2_Create(), Vec2_Create(SHELL_WIDTH, SHELL_HEIGHT));
-	obj.shape = SHAPE_OVAL;
+	obj.shape = SHAPE_CIRCLE;
 	return obj;
 }
 

@@ -97,18 +97,25 @@ void UpdatePlay(void)
 
 				// 進むべき方向ベクトル
 				Vec2 forward = Vec2_Create(shell_b->pos.x - shell_a->pos.x, shell_b->pos.y - shell_a->pos.y);
+				Vec2_Render(&forward, &shell_b->pos, COLOR_YELLOW);
 
 				Vec2 vel_vertical_a;
 				Vec2 vel_horizontal_a;
 				Vec2_Decompose(&vel_before_a, &forward, &vel_vertical_a, &vel_horizontal_a);
+				Vec2_Render(&vel_vertical_a, &shell_a->pos, COLOR_GREEN);
+				Vec2_Render(&vel_horizontal_a, &shell_a->pos, COLOR_LIME);
 				Vec2 vel_vertical_b;
 				Vec2 vel_horizontal_b;
 				Vec2_Decompose(&vel_before_b, &forward, &vel_vertical_b, &vel_horizontal_b);
+				Vec2_Render(&vel_vertical_b, &shell_b->pos, COLOR_GREEN);
+				Vec2_Render(&vel_horizontal_b, &shell_b->pos, COLOR_LIME);
 
 				// 衝突後のオブジェクトAのベクトル合成
 				Vec2_Add(&shell_a->vel, &vel_vertical_b, &vel_horizontal_a);
+				Vec2_Render(&shell_a->vel, &shell_a->pos, COLOR_BLUE);
 				// 衝突後のオブジェクトBのベクトル合成
 				Vec2_Add(&shell_b->vel, &vel_vertical_a, &vel_horizontal_b);
+				Vec2_Render(&shell_b->vel, &shell_b->pos, COLOR_FUCHSIA);
 			}
 		}
 	}

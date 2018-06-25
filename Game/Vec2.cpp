@@ -95,14 +95,14 @@ void Vec2_Decompose(Vec2* vec, Vec2* angle, Vec2* vec_a, Vec2* vec_b)
 // <ベクトルを合成>
 void Vec2_Add(Vec2* vec, Vec2* vec_a, Vec2* vec_b)
 {
-	vec->x += vec_a->x + vec_b->x;
-	vec->y += vec_a->y + vec_b->y;
+	vec->x = vec_a->x + vec_b->x;
+	vec->y = vec_a->y + vec_b->y;
 }
 
 // <ベクトルを描画>
 void Vec2_Render(Vec2* vec, Vec2* base, unsigned int color, float Thickness)
 {
-	float arrow_length = 20;
+	float arrow_length = 10 + Thickness*Vec2_Length(vec)*.125f;
 	float arrow_rota = Vec2_Angle(vec);
 	float arrow_rota1 = arrow_rota + ToRadians(-150);
 	float arrow_rota2 = arrow_rota + ToRadians(150);
