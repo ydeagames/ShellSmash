@@ -10,6 +10,8 @@
 
 // 定数の定義 ==============================================================
 
+#define FONT_MAIN_SIZE 20
+
 // 物理で習った係数
 #define FRICTION .995f
 #define BOUND_COEFFICIENT .95f
@@ -48,6 +50,8 @@ GameObject g_paddle;
 GameObject g_shells[NUM_SHELLS];
 ScoreLabel g_labels[NUM_LABELS];
 
+HFNT g_font_main;
+
 HGRP g_texture_shell_red;
 HGRP g_texture_shell_green;
 
@@ -71,6 +75,8 @@ void InitializePlay(void)
 	g_done = FALSE;
 	g_time_finished = -1;
 
+	// フォント
+	g_font_main = CreateFontToHandle("Segoe UI Black", FONT_MAIN_SIZE, DX_FONTTYPE_ANTIALIASING_4X4);
 
 	// テクスチャ
 	{
@@ -361,20 +367,27 @@ void RenderPlay(void)
 	{
 		if (g_labels[i].time > 0)
 		{
-			int width = GetDrawFormatStringWidth("%d", g_labels[i].score);
-			DrawFormatString((int)(g_labels[i].pos.x - width / 2), (int)(g_labels[i].pos.y - (LABEL_TIME - g_labels[i].time)), COLOR_WHITE, "%d", g_labels[i].score);
+			int width = GetDrawFormatStringWidthToHandle(g_font_main, "%d", g_labels[i].score);
+			DrawFormatStringToHandle((int)(g_labels[i].pos.x - width / 2), (int)(g_labels[i].pos.y - (LABEL_TIME - g_labels[i].time)), COLOR_WHITE, g_font_main, "%d", g_labels[i].score);
 		}
 	}
 
 	GameObject_Render(&g_paddle);
 
-	DrawFormatString(SCREEN_LEFT + 10, SCREEN_TOP + 10, COLOR_WHITE, "HI SCORE %d", g_score);
-	DrawFormatString(SCREEN_RIGHT - 100, SCREEN_BOTTOM - 20, COLOR_WHITE, "○ × %d", NUM_SHELLS - g_num_shells);
+	{
+		GameObject icon = GameObject_Create(Vec2_Create(SCREEN_RIGHT - 60, SCREEN_BOTTOM - 25));
+		icon.sprite = GameSprite_Create(GameTexture_Create(g_texture_shell_green, Vec2_Create(), Vec2_Create(32, 32)), .75f);
+		GameObject_Render(&icon);
+	}
+	DrawFormatStringToHandle(SCREEN_LEFT + 10, SCREEN_TOP + 10, COLOR_WHITE, g_font_main, "SCORE %d", g_score);
+	DrawFormatStringToHandle(SCREEN_RIGHT - 60 + 15, SCREEN_BOTTOM - 25 - 8, COLOR_WHITE, g_font_main, "×%d", NUM_SHELLS - g_num_shells);
 }
 
 // プレイシーンの終了処理
 void FinalizePlay(void)
 {
+	DeleteFontToHandle(g_font_main);
+
 	DeleteGraph(g_texture_shell_red);
 	DeleteGraph(g_texture_shell_green);
 
