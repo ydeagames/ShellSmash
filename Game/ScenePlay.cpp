@@ -217,6 +217,10 @@ void UpdatePlay(void)
 		if (g_done && finish)
 		{
 			g_num_shells++;
+
+			// めり込みテスト
+			//g_shells[0].pos = g_shells[NUM_SHELLS - 1].pos;
+
 			if (g_num_shells > NUM_SHELLS)
 			{
 				g_num_shells = NUM_SHELLS;
@@ -300,7 +304,11 @@ void UpdatePlay(void)
 					float r1 = GetMinF(shell_a->size.x, shell_a->size.y) / 2;
 					float r2 = GetMinF(shell_b->size.x, shell_b->size.y) / 2;
 					float angle = Vec2_Angle(&Vec2_Create(shell_a->pos.x - shell_b->pos.x, shell_a->pos.y - shell_b->pos.y));
-					shell_a->pos = Vec2_Create((r1 + r2)*cosf(angle) + shell_b->pos.x, (r1 + r2)*sinf(angle) + shell_b->pos.y);
+					shell_a->pos = Vec2_Create((r1 + r2 + 1)*cosf(angle) + shell_b->pos.x, (r1 + r2 + 1)*sinf(angle) + shell_b->pos.y);
+
+					// もしまだめり込んでたら強制的に左右にずらす
+					if (GameObject_IsHit(shell_a, shell_b))
+						shell_a->pos = Vec2_Create((r1 + r2 + 1)*cosf(0) + shell_b->pos.x, (r1 + r2 + 1)*sinf(0) + shell_b->pos.y);
 				}
 
 				// スコア
