@@ -126,7 +126,7 @@ void GameObject_Render(GameObject* obj);
 // <<コウラオブジェクト>> ----------------------------------------------
 
 // <コウラオブジェクト作成>
-GameObject GameObject_Shell_Create(void);
+GameObject GameObject_Shell_Create(Vec2 pos);
 
 // <コウラオブジェクト座標Xデフォルト>
 void GameObject_Shell_SetPosXDefault(GameObject* obj, GameObject* field);

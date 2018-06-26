@@ -124,7 +124,7 @@ static BOOL GameObject_IsHitBox(GameObject* obj1, GameObject* obj2)
 		);
 }
 
-// <楕円オブジェクト×楕円オブジェクト当たり判定>
+// <楕円オブジェクト×楕円オブジェクト当たり判定> // ※未使用
 static BOOL GameObject_IsHitOval(GameObject* obj1, GameObject* obj2)
 {
 	// STEP1 : obj2を単位円にする変換をobj1に施す
@@ -157,7 +157,7 @@ static BOOL GameObject_IsHitOval(GameObject* obj1, GameObject* obj2)
 	return (JudgeValue <= 1);
 }
 
-// <楕円オブジェクト×点当たり判定>
+// <楕円オブジェクト×点当たり判定> // ※未使用
 static BOOL GameObject_IsHitOvalPoint(GameObject* oval, Vec2* p)
 {
 	// 点に楕円→真円変換行列を適用
@@ -179,7 +179,7 @@ static BOOL GameObject_IsHitCircle(GameObject* obj1, GameObject* obj2)
 	return Vec2_LengthSquaredTo(&obj1->pos, &obj2->pos) < (r1 + r2)*(r1 + r2);
 }
 
-// <楕円オブジェクト×点当たり判定>
+// <円オブジェクト×点当たり判定>
 static BOOL GameObject_IsHitCirclePoint(GameObject* circle, Vec2* p)
 {
 	float r1 = GetMinF(circle->size.x, circle->size.y) / 2;
@@ -298,9 +298,9 @@ void GameObject_Render(GameObject* obj)
 // <<コウラオブジェクト>> ----------------------------------------------
 
 // <コウラオブジェクト作成>
-GameObject GameObject_Shell_Create(void)
+GameObject GameObject_Shell_Create(Vec2 vec)
 {
-	GameObject obj = GameObject_Create(Vec2_Create(), Vec2_Create(), Vec2_Create(SHELL_WIDTH, SHELL_HEIGHT));
+	GameObject obj = GameObject_Create(vec, Vec2_Create(), Vec2_Create(SHELL_WIDTH, SHELL_HEIGHT));
 	obj.shape = SHAPE_CIRCLE;
 	return obj;
 }
