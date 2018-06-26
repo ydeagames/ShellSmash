@@ -48,6 +48,9 @@ GameObject g_paddle;
 GameObject g_shells[NUM_SHELLS];
 ScoreLabel g_labels[NUM_LABELS];
 
+HGRP g_texture_shell_red;
+HGRP g_texture_shell_green;
+
 HSND g_se_smash;
 HSND g_se_hit_shell;
 HSND g_se_hit_wall;
@@ -67,6 +70,13 @@ void InitializePlay(void)
 	g_started = FALSE;
 	g_done = FALSE;
 	g_time_finished = -1;
+
+
+	// テクスチャ
+	{
+		g_texture_shell_red = LoadGraph("Resources\\Textures\\Object\\shell_red.png");
+		g_texture_shell_green = LoadGraph("Resources\\Textures\\Object\\shell_green.png");
+	}
 
 	g_field = GameObject_Field_Create();
 
@@ -90,7 +100,11 @@ void InitializePlay(void)
 				{
 					// ixが右からiyの位置より右ならば
 					if (ix < NUM_SHELL_PIN - iy)
-						g_shells[i++] = GameObject_Shell_Create(Vec2_Create(px + (right.x*ix) + (bottom.x*iy), py + (right.y*ix) + (bottom.y*iy)));
+					{
+						g_shells[i] = GameObject_Shell_Create(Vec2_Create(px + (right.x*ix) + (bottom.x*iy), py + (right.y*ix) + (bottom.y*iy)));
+						g_shells[i].sprite = GameSprite_Create(GameTexture_Create(g_texture_shell_red, Vec2_Create(), Vec2_Create(32, 32)));
+						i++;
+					}
 				}
 			}
 		}
@@ -98,6 +112,7 @@ void InitializePlay(void)
 		for (int i = NUM_SHELL_PINS; i < NUM_SHELLS; i++)
 		{
 			g_shells[i] = GameObject_Shell_Create(Vec2_Create(cx, by - sh * 2));
+			g_shells[i].sprite = GameSprite_Create(GameTexture_Create(g_texture_shell_green, Vec2_Create(), Vec2_Create(32, 32)));
 			g_shells[i].sprite.color = COLOR_GREEN;
 		}
 
@@ -113,6 +128,7 @@ void InitializePlay(void)
 		g_labels[i].time = 0;
 	}
 
+	// 効果音
 	{
 		g_se_smash = LoadSoundMem("Resources\\Audio\\se_smash.ogg");
 		g_se_hit_shell = LoadSoundMem("Resources\\Audio\\se_hit_shell.ogg");
@@ -359,6 +375,9 @@ void RenderPlay(void)
 // プレイシーンの終了処理
 void FinalizePlay(void)
 {
+	DeleteGraph(g_texture_shell_red);
+	DeleteGraph(g_texture_shell_green);
+
 	StopSoundMem(g_bgm_start);
 	StopSoundMem(g_bgm_loop);
 
