@@ -14,7 +14,7 @@
 
 // <ƒpƒhƒ‹>
 #define PADDLE_WIDTH  64
-#define PADDLE_HEIGHT 8
+#define PADDLE_HEIGHT 16
 
 // ŠÖ”‚ÌéŒ¾ ==============================================================
 

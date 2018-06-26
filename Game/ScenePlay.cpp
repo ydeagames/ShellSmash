@@ -3,24 +3,31 @@
 #include "InputManager.h"
 #include "GameObject.h"
 #include "GameUtils.h"
+#include "GameMain.h"
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 
 // 定数の定義 ==============================================================
 
-#define COEFFICIENCE .995
-#define BOUNCE .95
+// 物理で習った係数
+#define FRICTION .995f
+#define BOUND_COEFFICIENT .95f
+#define STOP_SPEED .1f
+#define MAX_PADDLE_SPEED 20
 
 #define NUM_SHELL_PIN 4
 // C言語で習った階乗計算
 #define NUM_SHELL_PINS ((NUM_SHELL_PIN+1)*NUM_SHELL_PIN/2)
 #define NUM_SHELL_PIN_BETWEEN 40
-#define NUM_SHELL_TRY 1
+#define NUM_SHELL_TRY 5
 #define NUM_SHELLS (NUM_SHELL_PINS+NUM_SHELL_TRY)
 
 // グローバル変数の定義 ====================================================
 
+int g_num_shells;
 int g_play_count;
+BOOL g_done;
 GameObject g_field;
 GameObject g_shells[NUM_SHELLS];
 GameObject g_paddle;
@@ -30,7 +37,9 @@ GameObject g_paddle;
 // プレイシーンの初期化処理
 void InitializePlay(void)
 {
+	g_num_shells = NUM_SHELL_PINS + 1;
 	g_play_count = 0;
+	g_done = FALSE;
 
 	g_field = GameObject_Field_Create();
 
@@ -94,37 +103,59 @@ void UpdatePlay(void)
 			GameObject_Field_CollisionHorizontal(&inner_field, &mouse, CONNECTION_BARRIER, EDGESIDE_INNER);
 			GameObject_Field_CollisionVertical(&inner_field, &mouse, CONNECTION_BARRIER, EDGESIDE_INNER);
 
-			g_paddle.vel.x = mouse.pos.x - g_paddle.pos.x;
-			g_paddle.vel.y = mouse.pos.y - g_paddle.pos.y;
+			g_paddle.vel.x = GetMinF(mouse.pos.x - g_paddle.pos.x, MAX_PADDLE_SPEED);
+			g_paddle.vel.y = GetMinF(mouse.pos.y - g_paddle.pos.y, MAX_PADDLE_SPEED);
 		}
 	}
 
 	// オブジェクト移動
 	{
+		BOOL finish = TRUE;
+
 		g_paddle.pos.x += g_paddle.vel.x;
 		g_paddle.pos.y += g_paddle.vel.y;
 
-		for (int i = 0; i < NUM_SHELLS; i++)
+		for (int i = 0; i < g_num_shells; i++)
 		{
 			g_shells[i].pos.x += g_shells[i].vel.x;
 			g_shells[i].pos.y += g_shells[i].vel.y;
-			g_shells[i].vel.x *= COEFFICIENCE;
-			g_shells[i].vel.y *= COEFFICIENCE;
+			g_shells[i].vel.x *= FRICTION;
+			g_shells[i].vel.y *= FRICTION;
+
+			if (GetAbsF(g_shells[i].vel.x) < STOP_SPEED && GetAbsF(g_shells[i].vel.y) < STOP_SPEED)
+			{
+				g_shells[i].vel.x = 0;
+				g_shells[i].vel.y = 0;
+			}
+			else
+				finish = FALSE;
+		}
+
+		// 終了判定
+		if (g_done && finish)
+		{
+			g_num_shells++;
+			g_done = FALSE;
+			if (g_num_shells > NUM_SHELLS)
+			{
+				g_num_shells = NUM_SHELLS;
+				RequestScene(SCENE_RESULT);
+			}
 		}
 	}
 
 	// 壁
 	{
 		// 壁とコウラ
-		for (int i = 0; i < NUM_SHELLS; i++)
+		for (int i = 0; i < g_num_shells; i++)
 		{
 			if (GameObject_Field_CollisionHorizontal(&g_field, &g_shells[i], CONNECTION_BARRIER, EDGESIDE_INNER))
 			{
-				g_shells[i].vel.x *= -BOUNCE;
+				g_shells[i].vel.x *= -BOUND_COEFFICIENT;
 			}
 			if (GameObject_Field_CollisionVertical(&g_field, &g_shells[i], CONNECTION_BARRIER, EDGESIDE_INNER))
 			{
-				g_shells[i].vel.y *= -BOUNCE;
+				g_shells[i].vel.y *= -BOUND_COEFFICIENT;
 			}
 		}
 
@@ -135,8 +166,9 @@ void UpdatePlay(void)
 		}
 	}
 
-	for (int i = NUM_SHELL_PINS; i < NUM_SHELLS; i++)
+	if (!g_done)
 	{
+		int i = g_num_shells - 1;
 		// パドルとコウラ
 		if (GameObject_IsHit(&g_paddle, &g_shells[i]))
 		{
@@ -150,10 +182,11 @@ void UpdatePlay(void)
 				g_shells[i].pos.x += relative_vel.x;
 				g_shells[i].pos.y += relative_vel.y;
 			}
+			g_done = TRUE;
 		}
 	}
 
-	for (int iy = 0; iy < NUM_SHELLS; iy++)
+	for (int iy = 0; iy < g_num_shells; iy++)
 	{
 		for (int ix = 0; ix < iy; ix++)
 		{
@@ -207,29 +240,14 @@ void RenderPlay(void)
 	//DrawFormatString(10, 25, COLOR_WHITE, "カウント: %3d / 180", g_play_count);
 	DrawFormatString(10, 25, COLOR_WHITE, "PRESS X TO END");
 
-	for (int i = 0; i < NUM_SHELLS; i++)
+	for (int i = 0; i < g_num_shells; i++)
 	{
 		GameObject_Render(&g_shells[i]);
 	}
 
 	GameObject_Render(&g_paddle);
 
-	/*
-	{
-		Vec2 base = Vec2_Create(320, 240);
-		Vec2 vec = Vec2_Create(100, 100);
-		Vec2 angle = Vec2_Create(120, -80);
-		Vec2 vec_a;
-		Vec2 vec_b;
-
-		Vec2_Decompose(&vec, &angle, &vec_a, &vec_b);
-
-		Vec2_Render(&vec, &base, COLOR_WHITE);
-		Vec2_Render(&angle, &base, COLOR_GRAY);
-		Vec2_Render(&vec_a, &base, COLOR_RED);
-		Vec2_Render(&vec_b, &base, COLOR_BLUE);
-	}
-	/**/
+	DrawFormatString(SCREEN_RIGHT - 100, SCREEN_BOTTOM - 20, COLOR_WHITE, "○ × %d", NUM_SHELLS - g_num_shells);
 }
 
 // プレイシーンの終了処理
