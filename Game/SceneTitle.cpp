@@ -12,16 +12,16 @@
 
 // グローバル変数の定義 ====================================================
 
-int g_title_count;
-HGRP g_texture_title;
-HGRP g_texture_text;
+static int g_count;
+static HGRP g_texture_title;
+static HGRP g_texture_text;
 
 // 関数の定義 ==============================================================
 
 // タイトルシーンの初期化処理
 void InitializeTitle(void)
 {
-	g_title_count = 0;
+	g_count = 0;
 
 	// テクスチャを読み込む
 	g_texture_title = LoadGraph(TEXTURE_TITLE);
@@ -31,7 +31,7 @@ void InitializeTitle(void)
 // タイトルシーンの更新処理
 void UpdateTitle(void)
 {
-	g_title_count++;
+	g_count++;
 
 	if (IsKeyPressed(PAD_INPUT_2))
 		RequestScene(SCENE_PLAY);
@@ -42,7 +42,7 @@ void RenderTitle(void)
 {
 	{
 		SetDrawBlendMode(DX_BLENDMODE_ALPHA,
-			(int)GetEasingValue(ESG_INCUBIC, GetPercentageRange((float)g_title_count, 60 * 0, 60 * 0.5f), 255)		// フェードイン
+			(int)GetEasingValue(ESG_INCUBIC, GetPercentageRange((float)g_count, 60 * 0, 60 * 0.5f), 255)		// フェードイン
 		);
 		DrawRotaGraph(SCREEN_CENTER_X, SCREEN_CENTER_Y, 1, 0, g_texture_title, TRUE);
 		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
@@ -53,7 +53,7 @@ void RenderTitle(void)
 
 		{
 			SetDrawBlendMode(DX_BLENDMODE_ALPHA,
-				(int)GetEasingValue(ESG_INQUART, GetPercentageRange((float)g_title_count, 60 * 0, 60 * 0.5f), 255)
+				(int)GetEasingValue(ESG_INQUART, GetPercentageRange((float)g_count, 60 * 0, 60 * 0.5f), 255)
 			);
 			DrawRotaGraph(SCREEN_CENTER_X, SCREEN_CENTER_Y + 96, 1, 0, g_texture_text, TRUE);
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
@@ -61,12 +61,12 @@ void RenderTitle(void)
 		{
 			SetDrawBlendMode(DX_BLENDMODE_ALPHA,
 				(int)GetMinF(
-					GetEasingValue(ESG_INQUART, GetPercentageRange((float)g_title_count, 60 * 0, 60 * 0.5f), 255),		// フェードイン
-					GetEasingValueRange(ESG_INCIRC, GetPercentageRange((float)(g_title_count % (duration + idle)), 0, (float)duration), 255, 32)
+					GetEasingValue(ESG_INQUART, GetPercentageRange((float)g_count, 60 * 0, 60 * 0.5f), 255),		// フェードイン
+					GetEasingValueRange(ESG_INCIRC, GetPercentageRange((float)(g_count % (duration + idle)), 0, (float)duration), 255, 32)
 				)
 			);
 			DrawRotaGraph(SCREEN_CENTER_X, SCREEN_CENTER_Y + 96,
-				GetEasingValueRange(ESG_LINEAR, GetPercentageRange((float)(g_title_count % (duration + idle)), 0, (float)duration), 1.1f, 1.f),
+				GetEasingValueRange(ESG_LINEAR, GetPercentageRange((float)(g_count % (duration + idle)), 0, (float)duration), 1.1f, 1.f),
 				0, g_texture_text, TRUE
 			);
 			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);

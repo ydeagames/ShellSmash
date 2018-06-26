@@ -40,30 +40,31 @@ typedef struct
 // グローバル変数の定義 ====================================================
 
 int g_score;
-int g_score_combo;
-int g_num_shells;
-int g_time_finished;
-BOOL g_started;
-BOOL g_done;
-GameObject g_field;
-GameObject g_paddle;
-GameObject g_shells[NUM_SHELLS];
-ScoreLabel g_labels[NUM_LABELS];
 
-HFNT g_font_main;
+static int g_score_combo;
+static int g_num_shells;
+static int g_time_finished;
+static BOOL g_started;
+static BOOL g_done;
+static GameObject g_field;
+static GameObject g_paddle;
+static GameObject g_shells[NUM_SHELLS];
+static ScoreLabel g_labels[NUM_LABELS];
 
-HGRP g_texture_background;
-HGRP g_texture_shell_red;
-HGRP g_texture_shell_green;
-HGRP g_texture_paddle;
+static HFNT g_font_main;
 
-HSND g_se_smash;
-HSND g_se_hit_shell;
-HSND g_se_hit_wall;
-HSND g_se_finish;
-HSND g_bgm_start;
-HSND g_bgm_loop;
-BOOL g_bgm_loop_flag;
+static HGRP g_texture_result;
+static HGRP g_texture_shell_red;
+static HGRP g_texture_shell_green;
+static HGRP g_texture_paddle;
+
+static HSND g_se_smash;
+static HSND g_se_hit_shell;
+static HSND g_se_hit_wall;
+static HSND g_se_finish;
+static HSND g_bgm_start;
+static HSND g_bgm_loop;
+static BOOL g_bgm_loop_flag;
 
 // 関数の定義 ==============================================================
 
@@ -82,7 +83,7 @@ void InitializePlay(void)
 
 	// テクスチャ
 	{
-		g_texture_background = LoadGraph("Resources\\Textures\\Play\\background.jpg");
+		g_texture_result = LoadGraph("Resources\\Textures\\background.jpg");
 		g_texture_shell_red = LoadGraph("Resources\\Textures\\Play\\Object\\shell_red.png");
 		g_texture_shell_green = LoadGraph("Resources\\Textures\\Play\\Object\\shell_green.png");
 		g_texture_paddle = LoadGraph("Resources\\Textures\\Play\\Object\\paddle.png");
@@ -182,6 +183,9 @@ void UpdatePlay(void)
 			g_paddle.vel.y = ClampF(mouse.pos.y - g_paddle.pos.y, -MAX_PADDLE_SPEED, MAX_PADDLE_SPEED);
 		}
 	}
+
+	//if (IsKeyPressed(PAD_INPUT_2))
+	//	RequestScene(SCENE_RESULT);
 
 	// オブジェクト移動
 	{
@@ -365,7 +369,7 @@ void RenderPlay(void)
 {
 	{
 		GameObject back = g_field;
-		back.sprite = GameSprite_Create(GameTexture_Create(g_texture_background, Vec2_Create(), Vec2_Create(612, 408)), 1.2f);
+		back.sprite = GameSprite_Create(GameTexture_Create(g_texture_result, Vec2_Create(), Vec2_Create(612, 408)), 1.2f);
 		GameObject_Render(&back);
 	}
 	{
@@ -408,7 +412,7 @@ void FinalizePlay(void)
 {
 	DeleteFontToHandle(g_font_main);
 
-	DeleteGraph(g_texture_background);
+	DeleteGraph(g_texture_result);
 	DeleteGraph(g_texture_shell_red);
 	DeleteGraph(g_texture_shell_green);
 	DeleteGraph(g_texture_paddle);
