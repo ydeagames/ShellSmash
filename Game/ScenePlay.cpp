@@ -39,6 +39,7 @@ typedef struct
 
 int g_num_shells;
 int g_play_count;
+BOOL g_started;
 BOOL g_done;
 GameObject g_field;
 GameObject g_paddle;
@@ -52,6 +53,7 @@ void InitializePlay(void)
 {
 	g_num_shells = NUM_SHELL_PINS + 1;
 	g_play_count = 0;
+	g_started = FALSE;
 	g_done = FALSE;
 
 	g_field = GameObject_Field_Create();
@@ -158,6 +160,7 @@ void UpdatePlay(void)
 		if (g_done && finish)
 		{
 			g_num_shells++;
+			g_started = FALSE;
 			g_done = FALSE;
 			if (g_num_shells > NUM_SHELLS)
 			{
@@ -195,18 +198,23 @@ void UpdatePlay(void)
 		// パドルとコウラ
 		if (GameObject_IsHit(&g_paddle, &g_shells[i]))
 		{
-			Vec2 last_vel = g_shells[i].vel;
-			while (GameObject_IsHit(&g_paddle, &g_shells[i]))
+			if (g_started)
 			{
-				Vec2 relative_vel = Vec2_Create(g_paddle.vel.x - last_vel.x, g_paddle.vel.y - last_vel.y);
-				g_shells[i].vel = relative_vel;
-				if (Vec2_IsZero(&relative_vel))
-					break;
-				g_shells[i].pos.x += relative_vel.x;
-				g_shells[i].pos.y += relative_vel.y;
+				Vec2 last_vel = g_shells[i].vel;
+				while (GameObject_IsHit(&g_paddle, &g_shells[i]))
+				{
+					Vec2 relative_vel = Vec2_Create(g_paddle.vel.x - last_vel.x, g_paddle.vel.y - last_vel.y);
+					g_shells[i].vel = relative_vel;
+					if (Vec2_IsZero(&relative_vel))
+						break;
+					g_shells[i].pos.x += relative_vel.x;
+					g_shells[i].pos.y += relative_vel.y;
+				}
+				g_done = TRUE;
 			}
-			g_done = TRUE;
 		}
+		else
+			g_started = TRUE;
 	}
 
 	for (int iy = 0; iy < g_num_shells; iy++)
@@ -281,7 +289,6 @@ void RenderPlay(void)
 		if (g_labels[i].time > 0)
 		{
 			int width = GetDrawFormatStringWidth("%d", g_labels[i].score);
-			int height = 20;
 			DrawFormatString(g_labels[i].pos.x - width / 2, g_labels[i].pos.y - (LABEL_TIME - g_labels[i].time), COLOR_WHITE, "%d", g_labels[i].score);
 		}
 	}
