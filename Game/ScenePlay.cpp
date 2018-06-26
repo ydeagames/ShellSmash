@@ -52,8 +52,10 @@ ScoreLabel g_labels[NUM_LABELS];
 
 HFNT g_font_main;
 
+HGRP g_texture_background;
 HGRP g_texture_shell_red;
 HGRP g_texture_shell_green;
+HGRP g_texture_paddle;
 
 HSND g_se_smash;
 HSND g_se_hit_shell;
@@ -80,8 +82,10 @@ void InitializePlay(void)
 
 	// テクスチャ
 	{
-		g_texture_shell_red = LoadGraph("Resources\\Textures\\Object\\shell_red.png");
-		g_texture_shell_green = LoadGraph("Resources\\Textures\\Object\\shell_green.png");
+		g_texture_background = LoadGraph("Resources\\Textures\\Play\\background.jpg");
+		g_texture_shell_red = LoadGraph("Resources\\Textures\\Play\\Object\\shell_red.png");
+		g_texture_shell_green = LoadGraph("Resources\\Textures\\Play\\Object\\shell_green.png");
+		g_texture_paddle = LoadGraph("Resources\\Textures\\Play\\Object\\paddle.png");
 	}
 
 	g_field = GameObject_Field_Create();
@@ -124,7 +128,8 @@ void InitializePlay(void)
 
 		g_paddle = GameObject_Paddle_Create();
 		g_paddle.pos = Vec2_Create(cx, by - sh * 2);
-		g_paddle.sprite.color = COLOR_GREEN;
+		g_paddle.sprite = GameSprite_Create(GameTexture_Create(g_texture_paddle, Vec2_Create(), Vec2_Create(69, 19)));
+		g_paddle.sprite.color = COLOR_BLUE;
 	}
 
 	for (int i = 0; i < NUM_LABELS; i++)
@@ -358,6 +363,21 @@ void UpdatePlay(void)
 // プレイシーンの描画処理
 void RenderPlay(void)
 {
+	{
+		GameObject back = g_field;
+		back.sprite = GameSprite_Create(GameTexture_Create(g_texture_background, Vec2_Create(), Vec2_Create(612, 408)), 1.2f);
+		GameObject_Render(&back);
+	}
+	{
+		GameObject back = g_field;
+		back.size.x -= 10;
+		back.size.y -= 10;
+		back.sprite.color = COLOR_BLACK;
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, 64);
+		GameObject_Render(&back);
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	}
+
 	for (int i = 0; i < g_num_shells; i++)
 	{
 		GameObject_Render(&g_shells[i]);
@@ -388,8 +408,10 @@ void FinalizePlay(void)
 {
 	DeleteFontToHandle(g_font_main);
 
+	DeleteGraph(g_texture_background);
 	DeleteGraph(g_texture_shell_red);
 	DeleteGraph(g_texture_shell_green);
+	DeleteGraph(g_texture_paddle);
 
 	StopSoundMem(g_bgm_start);
 	StopSoundMem(g_bgm_loop);

@@ -6,7 +6,7 @@
 // 定数の定義 ==============================================================
 
 // <デバッグ用当たり判定表示>
-#define DEBUG_HITBOX TRUE
+#define DEBUG_HITBOX FALSE
 
 // <コウラ>
 #define SHELL_WIDTH 32
@@ -265,11 +265,13 @@ void GameObject_Render(GameObject* obj)
 				default:
 				case SHAPE_BOX:
 					DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), obj->sprite.color, FALSE, .5f);
+					break;
 				case SHAPE_CIRCLE:
 				{
 					float r1 = GetMinF(obj->size.x, obj->size.y) / 2;
 					DrawCircleAA(GameObject_GetX(obj, CENTER_X), GameObject_GetY(obj, CENTER_Y), r1, 120, obj->sprite.color, FALSE, .5f);
 					DrawBoxAA(GameObject_GetX(obj, LEFT), GameObject_GetY(obj, TOP), GameObject_GetX(obj, RIGHT), GameObject_GetY(obj, BOTTOM), obj->sprite.color, FALSE, .5f);
+					break;
 				}
 				}
 			// スプライト描画
