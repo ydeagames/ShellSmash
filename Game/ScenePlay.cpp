@@ -40,12 +40,21 @@ typedef struct
 int g_score;
 int g_score_combo;
 int g_num_shells;
+int g_time_finished;
 BOOL g_started;
 BOOL g_done;
 GameObject g_field;
 GameObject g_paddle;
 GameObject g_shells[NUM_SHELLS];
 ScoreLabel g_labels[NUM_LABELS];
+
+HSND g_se_smash;
+HSND g_se_hit_shell;
+HSND g_se_hit_wall;
+HSND g_se_finish;
+HSND g_bgm_start;
+HSND g_bgm_loop;
+BOOL g_bgm_loop_flag;
 
 // 関数の定義 ==============================================================
 
@@ -57,6 +66,7 @@ void InitializePlay(void)
 	g_num_shells = NUM_SHELL_PINS + 1;
 	g_started = FALSE;
 	g_done = FALSE;
+	g_time_finished = -1;
 
 	g_field = GameObject_Field_Create();
 
@@ -102,6 +112,18 @@ void InitializePlay(void)
 		g_labels[i].score = 0;
 		g_labels[i].time = 0;
 	}
+
+	{
+		g_se_smash = LoadSoundMem("Resources\\Audio\\se_smash.ogg");
+		g_se_hit_shell = LoadSoundMem("Resources\\Audio\\se_hit_shell.ogg");
+		g_se_hit_wall = LoadSoundMem("Resources\\Audio\\se_hit_wall.ogg");
+		g_se_finish = LoadSoundMem("Resources\\Audio\\se_finish.ogg");
+		g_bgm_start = LoadSoundMem("Resources\\Audio\\bgm_start.ogg");
+		g_bgm_loop = LoadSoundMem("Resources\\Audio\\bgm_loop.ogg");
+		g_bgm_loop_flag = FALSE;
+	}
+
+	PlaySoundMem(g_bgm_start, DX_PLAYTYPE_BACK);
 }
 
 // プレイシーンの更新処理
@@ -111,6 +133,11 @@ void UpdatePlay(void)
 	inner_field.size.x = 200;
 	inner_field.size.y = 200;
 	inner_field.pos.y += 100;
+
+	if (g_time_finished == 0)
+		RequestScene(SCENE_RESULT);
+	if (g_time_finished > 0)
+		g_time_finished--;
 
 	// 操作
 	{
@@ -159,13 +186,20 @@ void UpdatePlay(void)
 		if (g_done && finish)
 		{
 			g_num_shells++;
-			g_score_combo = 0;
-			g_started = FALSE;
-			g_done = FALSE;
 			if (g_num_shells > NUM_SHELLS)
 			{
 				g_num_shells = NUM_SHELLS;
-				RequestScene(SCENE_RESULT);
+				if (g_time_finished < 0)
+				{
+					PlaySoundMem(g_se_finish, DX_PLAYTYPE_BACK);
+					g_time_finished = 60 * 3;
+				}
+			}
+			else
+			{
+				g_score_combo = 0;
+				g_started = FALSE;
+				g_done = FALSE;
 			}
 		}
 	}
@@ -178,10 +212,12 @@ void UpdatePlay(void)
 			if (GameObject_Field_CollisionHorizontal(&g_field, &g_shells[i], CONNECTION_BARRIER, EDGESIDE_INNER))
 			{
 				g_shells[i].vel.x *= -BOUND_COEFFICIENT;
+				PlaySoundMem(g_se_hit_wall, DX_PLAYTYPE_BACK);
 			}
 			if (GameObject_Field_CollisionVertical(&g_field, &g_shells[i], CONNECTION_BARRIER, EDGESIDE_INNER))
 			{
 				g_shells[i].vel.y *= -BOUND_COEFFICIENT;
+				PlaySoundMem(g_se_hit_wall, DX_PLAYTYPE_BACK);
 			}
 		}
 
@@ -210,6 +246,7 @@ void UpdatePlay(void)
 					g_shells[i].pos.x += relative_vel.x;
 					g_shells[i].pos.y += relative_vel.y;
 				}
+				PlaySoundMem(g_se_smash, DX_PLAYTYPE_BACK);
 				g_done = TRUE;
 			}
 		}
@@ -256,32 +293,43 @@ void UpdatePlay(void)
 					}
 				}
 
-				// 衝突前のオブジェクトAの速度ベクトル
-				Vec2 vel_before_a = shell_a->vel;
-				// 衝突前のオブジェクトBの速度ベクトル
-				Vec2 vel_before_b = shell_b->vel;
-
-				// 進むべき方向ベクトル
-				Vec2 forward = Vec2_Create(shell_b->pos.x - shell_a->pos.x, shell_b->pos.y - shell_a->pos.y);
-
+				// 衝突
 				{
-					// 進むべき方向ベクトルと平行
-					Vec2 vel_parallel_a, vel_parallel_b;
-					// 進むべき方向ベクトルと鉛直
-					Vec2 vel_perpendicular_a, vel_perpendicular_b;
+					// 衝突前のオブジェクトAの速度ベクトル
+					Vec2 vel_before_a = shell_a->vel;
+					// 衝突前のオブジェクトBの速度ベクトル
+					Vec2 vel_before_b = shell_b->vel;
 
-					// 衝突前のオブジェクトAのベクトル分解
-					Vec2_Decompose(&vel_before_a, &forward, &vel_parallel_a, &vel_perpendicular_a);
-					// 衝突前のオブジェクトBのベクトル分解
-					Vec2_Decompose(&vel_before_b, &forward, &vel_parallel_b, &vel_perpendicular_b);
+					// 進むべき方向ベクトル
+					Vec2 forward = Vec2_Create(shell_b->pos.x - shell_a->pos.x, shell_b->pos.y - shell_a->pos.y);
 
-					// 衝突後のオブジェクトAのベクトル合成
-					Vec2_Add(&shell_a->vel, &vel_parallel_b, &vel_perpendicular_a);
-					// 衝突後のオブジェクトBのベクトル合成
-					Vec2_Add(&shell_b->vel, &vel_parallel_a, &vel_perpendicular_b);
+					{
+						// 進むべき方向ベクトルと平行
+						Vec2 vel_parallel_a, vel_parallel_b;
+						// 進むべき方向ベクトルと鉛直
+						Vec2 vel_perpendicular_a, vel_perpendicular_b;
+
+						// 衝突前のオブジェクトAのベクトル分解
+						Vec2_Decompose(&vel_before_a, &forward, &vel_parallel_a, &vel_perpendicular_a);
+						// 衝突前のオブジェクトBのベクトル分解
+						Vec2_Decompose(&vel_before_b, &forward, &vel_parallel_b, &vel_perpendicular_b);
+
+						// 衝突後のオブジェクトAのベクトル合成
+						Vec2_Add(&shell_a->vel, &vel_parallel_b, &vel_perpendicular_a);
+						// 衝突後のオブジェクトBのベクトル合成
+						Vec2_Add(&shell_b->vel, &vel_parallel_a, &vel_perpendicular_b);
+					}
 				}
+
+				PlaySoundMem(g_se_hit_shell, DX_PLAYTYPE_BACK);
 			}
 		}
+	}
+
+	if (!g_bgm_loop_flag && !CheckSoundMem(g_bgm_start))
+	{
+		g_bgm_loop_flag = TRUE;
+		PlaySoundMem(g_bgm_loop, DX_PLAYTYPE_LOOP);
 	}
 }
 
@@ -311,5 +359,12 @@ void RenderPlay(void)
 // プレイシーンの終了処理
 void FinalizePlay(void)
 {
+	StopSoundMem(g_bgm_start);
+	StopSoundMem(g_bgm_loop);
 
+	DeleteSoundMem(g_se_smash);
+	DeleteSoundMem(g_se_hit_shell);
+	DeleteSoundMem(g_se_hit_wall);
+	DeleteSoundMem(g_bgm_start);
+	DeleteSoundMem(g_bgm_loop);
 }
