@@ -14,7 +14,7 @@
 #define FRICTION .995f
 #define BOUND_COEFFICIENT .95f
 #define STOP_SPEED .1f
-#define MAX_PADDLE_SPEED 20
+#define MAX_PADDLE_SPEED 40
 
 #define SHELL_PIN_BETWEEN 40
 #define NUM_SHELL_PIN 4
@@ -37,8 +37,9 @@ typedef struct
 
 // グローバル変数の定義 ====================================================
 
+int g_score;
+int g_score_combo;
 int g_num_shells;
-int g_play_count;
 BOOL g_started;
 BOOL g_done;
 GameObject g_field;
@@ -51,8 +52,9 @@ ScoreLabel g_labels[NUM_LABELS];
 // プレイシーンの初期化処理
 void InitializePlay(void)
 {
+	g_score = 0;
+	g_score_combo = 0;
 	g_num_shells = NUM_SHELL_PINS + 1;
-	g_play_count = 0;
 	g_started = FALSE;
 	g_done = FALSE;
 
@@ -88,6 +90,10 @@ void InitializePlay(void)
 			g_shells[i] = GameObject_Shell_Create(Vec2_Create(cx, by - sh * 2));
 			g_shells[i].sprite.color = COLOR_GREEN;
 		}
+
+		g_paddle = GameObject_Paddle_Create();
+		g_paddle.pos = Vec2_Create(cx, by - sh * 2);
+		g_paddle.sprite.color = COLOR_GREEN;
 	}
 
 	for (int i = 0; i < NUM_LABELS; i++)
@@ -96,9 +102,6 @@ void InitializePlay(void)
 		g_labels[i].score = 0;
 		g_labels[i].time = 0;
 	}
-
-	g_paddle = GameObject_Paddle_Create();
-	g_paddle.sprite.color = COLOR_GREEN;
 }
 
 // プレイシーンの更新処理
@@ -108,10 +111,6 @@ void UpdatePlay(void)
 	inner_field.size.x = 200;
 	inner_field.size.y = 200;
 	inner_field.pos.y += 100;
-
-	//if (g_play_count++ >= 180)
-	if (IsKeyPressed(PAD_INPUT_2))
-		RequestScene(SCENE_RESULT);
 
 	// 操作
 	{
@@ -125,8 +124,8 @@ void UpdatePlay(void)
 			GameObject_Field_CollisionHorizontal(&inner_field, &mouse, CONNECTION_BARRIER, EDGESIDE_INNER);
 			GameObject_Field_CollisionVertical(&inner_field, &mouse, CONNECTION_BARRIER, EDGESIDE_INNER);
 
-			g_paddle.vel.x = GetMinF(mouse.pos.x - g_paddle.pos.x, MAX_PADDLE_SPEED);
-			g_paddle.vel.y = GetMinF(mouse.pos.y - g_paddle.pos.y, MAX_PADDLE_SPEED);
+			g_paddle.vel.x = ClampF(mouse.pos.x - g_paddle.pos.x, -MAX_PADDLE_SPEED, MAX_PADDLE_SPEED);
+			g_paddle.vel.y = ClampF(mouse.pos.y - g_paddle.pos.y, -MAX_PADDLE_SPEED, MAX_PADDLE_SPEED);
 		}
 	}
 
@@ -154,12 +153,13 @@ void UpdatePlay(void)
 		}
 
 		for (int i = 0; i < NUM_LABELS; i++)
-			g_labels[i].time = GetMaxF(0, g_labels[i].time - 1);
+			g_labels[i].time = GetMax(0, g_labels[i].time - 1);
 
 		// 終了判定
 		if (g_done && finish)
 		{
 			g_num_shells++;
+			g_score_combo = 0;
 			g_started = FALSE;
 			g_done = FALSE;
 			if (g_num_shells > NUM_SHELLS)
@@ -237,10 +237,23 @@ void UpdatePlay(void)
 
 				// スコア
 				{
+					int score_plus;
+
+					// スコア加算
+					{
+						g_score_combo = GetMin(24, g_score_combo + 1);
+						score_plus = g_score_combo*10;
+						if (ix >= NUM_SHELL_PINS && iy >= NUM_SHELL_PINS)
+							score_plus *= 10;
+						g_score += score_plus;
+					}
+
 					// スコア表示
-					g_labels[iy + ix].pos = Vec2_Create((shell_a->pos.x + shell_b->pos.x) / 2, (shell_a->pos.y + shell_b->pos.y) / 2);
-					g_labels[iy + ix].score = 10;
-					g_labels[iy + ix].time = LABEL_TIME;
+					{
+						g_labels[iy + ix].pos = Vec2_Create((shell_a->pos.x + shell_b->pos.x) / 2, (shell_a->pos.y + shell_b->pos.y) / 2);
+						g_labels[iy + ix].score = score_plus;
+						g_labels[iy + ix].time = LABEL_TIME;
+					}
 				}
 
 				// 衝突前のオブジェクトAの速度ベクトル
@@ -275,10 +288,6 @@ void UpdatePlay(void)
 // プレイシーンの描画処理
 void RenderPlay(void)
 {
-	DrawFormatString(10, 10, COLOR_WHITE, "プレイシーン");
-	//DrawFormatString(10, 25, COLOR_WHITE, "カウント: %3d / 180", g_play_count);
-	DrawFormatString(10, 25, COLOR_WHITE, "PRESS X TO END");
-
 	for (int i = 0; i < g_num_shells; i++)
 	{
 		GameObject_Render(&g_shells[i]);
@@ -289,12 +298,13 @@ void RenderPlay(void)
 		if (g_labels[i].time > 0)
 		{
 			int width = GetDrawFormatStringWidth("%d", g_labels[i].score);
-			DrawFormatString(g_labels[i].pos.x - width / 2, g_labels[i].pos.y - (LABEL_TIME - g_labels[i].time), COLOR_WHITE, "%d", g_labels[i].score);
+			DrawFormatString((int)(g_labels[i].pos.x - width / 2), (int)(g_labels[i].pos.y - (LABEL_TIME - g_labels[i].time)), COLOR_WHITE, "%d", g_labels[i].score);
 		}
 	}
 
 	GameObject_Render(&g_paddle);
 
+	DrawFormatString(SCREEN_LEFT + 10, SCREEN_TOP + 10, COLOR_WHITE, "HI SCORE %d", g_score);
 	DrawFormatString(SCREEN_RIGHT - 100, SCREEN_BOTTOM - 20, COLOR_WHITE, "○ × %d", NUM_SHELLS - g_num_shells);
 }
 
