@@ -16,12 +16,24 @@
 #define STOP_SPEED .1f
 #define MAX_PADDLE_SPEED 20
 
+#define SHELL_PIN_BETWEEN 40
 #define NUM_SHELL_PIN 4
 // C言語で習った階乗計算
 #define NUM_SHELL_PINS ((NUM_SHELL_PIN+1)*NUM_SHELL_PIN/2)
-#define NUM_SHELL_PIN_BETWEEN 40
 #define NUM_SHELL_TRY 5
 #define NUM_SHELLS (NUM_SHELL_PINS+NUM_SHELL_TRY)
+
+#define LABEL_TIME 60
+#define NUM_LABELS ((NUM_SHELL_PINS+1)*NUM_SHELL_PINS/2)
+
+// 構造体の宣言 ============================================================
+
+typedef struct
+{
+	Vec2 pos;
+	int score;
+	int time;
+} ScoreLabel;
 
 // グローバル変数の定義 ====================================================
 
@@ -29,8 +41,9 @@ int g_num_shells;
 int g_play_count;
 BOOL g_done;
 GameObject g_field;
-GameObject g_shells[NUM_SHELLS];
 GameObject g_paddle;
+GameObject g_shells[NUM_SHELLS];
+ScoreLabel g_labels[NUM_LABELS];
 
 // 関数の定義 ==============================================================
 
@@ -45,8 +58,8 @@ void InitializePlay(void)
 
 	// C言語の図形問題05を応用
 	{
-		Vec2 right = Vec2_Create(NUM_SHELL_PIN_BETWEEN, 0);
-		Vec2 bottom = Vec2_Create(NUM_SHELL_PIN_BETWEEN*cosf(ToRadians(60)), NUM_SHELL_PIN_BETWEEN*sinf(ToRadians(60)));
+		Vec2 right = Vec2_Create(SHELL_PIN_BETWEEN, 0);
+		Vec2 bottom = Vec2_Create(SHELL_PIN_BETWEEN*cosf(ToRadians(60)), SHELL_PIN_BETWEEN*sinf(ToRadians(60)));
 		float cx = GameObject_GetX(&g_field, CENTER_X);
 		float ty = GameObject_GetY(&g_field, TOP);
 		float by = GameObject_GetY(&g_field, BOTTOM);
@@ -73,6 +86,13 @@ void InitializePlay(void)
 			g_shells[i] = GameObject_Shell_Create(Vec2_Create(cx, by - sh * 2));
 			g_shells[i].sprite.color = COLOR_GREEN;
 		}
+	}
+
+	for (int i = 0; i < NUM_LABELS; i++)
+	{
+		g_labels[i].pos = Vec2_Create();
+		g_labels[i].score = 0;
+		g_labels[i].time = 0;
 	}
 
 	g_paddle = GameObject_Paddle_Create();
@@ -130,6 +150,9 @@ void UpdatePlay(void)
 			else
 				finish = FALSE;
 		}
+
+		for (int i = 0; i < NUM_LABELS; i++)
+			g_labels[i].time = GetMaxF(0, g_labels[i].time - 1);
 
 		// 終了判定
 		if (g_done && finish)
@@ -204,6 +227,14 @@ void UpdatePlay(void)
 					shell_a->pos = Vec2_Create((r1 + r2)*cosf(angle) + shell_b->pos.x, (r1 + r2)*sinf(angle) + shell_b->pos.y);
 				}
 
+				// スコア
+				{
+					// スコア表示
+					g_labels[iy + ix].pos = Vec2_Create((shell_a->pos.x + shell_b->pos.x) / 2, (shell_a->pos.y + shell_b->pos.y) / 2);
+					g_labels[iy + ix].score = 10;
+					g_labels[iy + ix].time = LABEL_TIME;
+				}
+
 				// 衝突前のオブジェクトAの速度ベクトル
 				Vec2 vel_before_a = shell_a->vel;
 				// 衝突前のオブジェクトBの速度ベクトル
@@ -243,6 +274,16 @@ void RenderPlay(void)
 	for (int i = 0; i < g_num_shells; i++)
 	{
 		GameObject_Render(&g_shells[i]);
+	}
+
+	for (int i = 0; i < NUM_LABELS; i++)
+	{
+		if (g_labels[i].time > 0)
+		{
+			int width = GetDrawFormatStringWidth("%d", g_labels[i].score);
+			int height = 20;
+			DrawFormatString(g_labels[i].pos.x - width / 2, g_labels[i].pos.y - (LABEL_TIME - g_labels[i].time), COLOR_WHITE, "%d", g_labels[i].score);
+		}
 	}
 
 	GameObject_Render(&g_paddle);
